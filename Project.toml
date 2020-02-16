@@ -1,0 +1,13 @@
+name = "DBus"
+uuid = "e1709666-7621-4c4b-92f5-7386f2fe0aaa"
+authors = ["Julian P Samaroo <jpsamaroo@jpsamaroo.me>"]
+version = "0.1.0"
+
+[deps]
+Dbus_jll = "ee1fde0b-3d02-5ea6-8484-8dfef6360eab"
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test"]
