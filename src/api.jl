@@ -27,7 +27,27 @@ const DBusConnection = Cvoid
     DBUS_BUS_SYSTEM = Cint(1)
     DBUS_BUS_STARTER = Cint(2)
 end
+@enum DBusNameFlag begin
+    DBUS_NAME_FLAG_ALLOW_REPLACEMENT = Cuint(1)
+    DBUS_NAME_FLAG_REPLACE_EXISTING = Cuint(2)
+    DBUS_NAME_FLAG_DO_NOT_QUEUE = Cuint(4)
+end
+@enum DBusRequestNameReplyFlag begin
+    DBUS_REQUEST_NAME_REPLY_PRIMARY_OWNER = Cuint(1)
+    DBUS_REQUEST_NAME_REPLY_IN_QUEUE = Cuint(2)
+    DBUS_REQUEST_NAME_REPLY_EXISTS = Cuint(3)
+    DBUS_REQUEST_NAME_REPLY_ALREADY_OWNER = Cuint(4)
+end
 
 function dbus_bus_get(bus_type::DBusBusType, error)
     ccall((:dbus_bus_get, libdbus), Ptr{DBusConnection}, (DBusBusType, Ptr{DBusError},), bus_type, error)
+end
+function dbus_connection_close(conn)
+    ccall((:dbus_connection_close, libdbus), Cvoid, (Ptr{DBusConnection},), conn)
+end
+function dbus_bus_request_name(conn, name, flag, error)
+    ccall((:dbus_bus_request_name, libdbus),
+          DBusRequestNameReplyFlag,
+          (Ptr{DBusConnection}, Cstring, DBusNameFlag, Ptr{DBusError}),
+          conn, name, flag, error)
 end
