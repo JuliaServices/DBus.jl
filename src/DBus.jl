@@ -147,6 +147,12 @@ function message_iter_write!(iter, arg::ObjectPath)
 end
 message_iter_write!(iter, arg::T) where {T<:Integer} =
     dbus_message_iter_append_basic(iter, dbus_type(T), Ref(arg))
+function message_iter_write!(iter, arg::Ref{T}) where T
+    var_iter = Ref{DBusMessageIter}()
+    dbus_message_iter_open_container(iter, DBUS_TYPE_VARIANT, dbus_spec(T), var_iter)
+    message_iter_write!(var_iter, arg[])
+    dbus_message_iter_close_container(iter, var_iter)
+end
 
 function message_read(msg)
     iter = Ref{DBusMessageIter}()
@@ -174,6 +180,12 @@ message_iter_read(::Type{ObjectPath}, iter) =
     ObjectPath(dbus_message_iter_get_basic(iter, String))
 message_iter_read(::Type{T}, iter) where {T<:Integer} =
     dbus_message_iter_get_basic(iter, T)
+function message_iter_read(::Type{Ref}, iter)
+    var_iter = Ref{DBusMessageIter}()
+    dbus_message_iter_recurse(iter, var_iter)
+    S = dbus_message_iter_get_arg_type(var_iter)
+    return message_iter_read(julia_type(S), var_iter)
+end
 
 function send_recv!(conn, target, object, interface, method, args)
     pending = Ref{Ptr{DBusPendingCall}}(Ptr{DBusPendingCall}(0))

@@ -2,6 +2,18 @@ function dbus_message_iter_init(msg, iter)
     ccall((:dbus_message_iter_init, libdbus),
           Bool, (Ptr{DBusMessage}, Ptr{DBusMessageIter},), msg, iter)
 end
+function dbus_message_iter_recurse(iter, sub)
+    ccall((:dbus_message_iter_recurse, libdbus),
+          Cvoid, (Ptr{DBusMessageIter}, Ptr{DBusMessageIter},), iter, sub)
+end
+function dbus_message_iter_next(iter)
+    ccall((:dbus_message_iter_next, libdbus),
+          Bool, (Ptr{DBusMessageIter},), iter)
+end
+function dbus_message_iter_has_next(iter)
+    ccall((:dbus_message_iter_has_next, libdbus),
+          Bool, (Ptr{DBusMessageIter},), iter)
+end
 function dbus_message_iter_init_append(msg, iter)
     ccall((:dbus_message_iter_init_append, libdbus),
           Bool,
