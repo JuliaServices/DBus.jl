@@ -31,8 +31,15 @@ function check(title, error=ERROR)
     end
 end
 
-function connect(; err=ERROR)
-    conn = dbus_bus_get(DBUS_BUS_SESSION, err)
+function connect(bus::Symbol=:session; err=ERROR)
+    bus_kind = if bus == :session
+        DBUS_BUS_SESSION
+    elseif bus == :system
+        DBUS_BUS_SYSTEM
+    else
+        throw(ArgumentError("Invalid bus: $bus"))
+    end
+    conn = dbus_bus_get(bus_kind, err)
     check("Connection Opening")
     @assert conn != C_NULL
     conn
