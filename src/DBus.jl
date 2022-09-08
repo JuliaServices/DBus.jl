@@ -4,6 +4,7 @@ using Dbus_jll
 
 include("types.jl")
 include("error.jl")
+include("threads.jl")
 include("connection.jl")
 include("bus.jl")
 include("message.jl")
@@ -35,16 +36,16 @@ function connect(bus::Symbol=:session; err=ERROR)
     elseif bus == :system
         DBUS_BUS_SYSTEM
     else
-        throw(ArgumentError("Invalid bus: $bus"))
+        throw(ArgumentError("Invalid DBus bus: $bus"))
     end
     conn = dbus_bus_get(bus_kind, err)
-    check("Connection Opening")
+    check("dbus_bus_get")
     @assert conn != C_NULL
     conn
 end
 function connection_close!(conn; err=ERROR)
     dbus_connection_close(conn)
-    check("Connection Closing")
+    check("dbus_connection_close")
 end
 
 function request_name!(conn, name; err=ERROR, strict=false)
@@ -77,6 +78,14 @@ function start_service!(conn, name; err=ERROR)
     return (;success=ret, reply=reply[])
 end
 
+struct ObjectPath
+    path::String
+end
+Base.convert(::Type{String}, op::ObjectPath) = op.path
+Base.cconvert(::Type{Cstring}, op::ObjectPath) =
+    reinterpret(Cstring, pointer(op.path))
+Base.convert(::Type{ObjectPath}, str::String) = ObjectPath(str)
+
 dbus_type(x) = error("Invalid DBus type: $x")
 const TYPE_MAP = [
     Array => DBUS_TYPE_ARRAY,
@@ -90,6 +99,7 @@ const TYPE_MAP = [
     UInt64 => DBUS_TYPE_UINT64,
     Float64 => DBUS_TYPE_DOUBLE,
     String => DBUS_TYPE_STRING,
+    ObjectPath => DBUS_TYPE_OBJECT_PATH,
     Ref => DBUS_TYPE_VARIANT,
 ]
 for (jltype, dbustype) in TYPE_MAP
@@ -129,6 +139,12 @@ function message_iter_write!(iter, arg::String)
         dbus_message_iter_append_basic(iter, DBUS_TYPE_STRING, arg_ptr)
     end
 end
+function message_iter_write!(iter, arg::ObjectPath)
+    GC.@preserve arg begin
+        arg_ptr = Ref{Cstring}(pointer(arg.path))
+        dbus_message_iter_append_basic(iter, DBUS_TYPE_OBJECT_PATH, arg_ptr)
+    end
+end
 message_iter_write!(iter, arg::T) where {T<:Integer} =
     dbus_message_iter_append_basic(iter, dbus_type(T), Ref(arg))
 
@@ -154,6 +170,8 @@ function message_iter_read(::Type{Vector{T}}, iter) where T
 end
 message_iter_read(::Type{String}, iter) =
     dbus_message_iter_get_basic(iter, String)
+message_iter_read(::Type{ObjectPath}, iter) =
+    ObjectPath(dbus_message_iter_get_basic(iter, String))
 message_iter_read(::Type{T}, iter) where {T<:Integer} =
     dbus_message_iter_get_basic(iter, T)
 
@@ -208,6 +226,9 @@ end
 
 function __init__()
     dbus_error_init(ERROR)
+    if !dbus_threads_init_default()
+        @warn "DBus: Failed to initialize DBus in thread-safe mode!"
+    end
 end
 
 end # module
