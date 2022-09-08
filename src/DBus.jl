@@ -1,7 +1,5 @@
 module DBus
 
-export connect, request_name!
-
 using Dbus_jll
 
 include("types.jl")
