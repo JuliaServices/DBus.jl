@@ -115,6 +115,7 @@ function julia_type(x::Char)
 end
 dbus_spec(::Type{Vector{T}}) where T = "a$(dbus_spec(T))"
 dbus_spec(::Type{Dict{K,V}}) where {K,V} = "{$(dbus_spec(K))$(dbus_spec(V))}"
+dbus_spec(::Type{<:Ref}) = "v"
 dbus_spec(::Type{T}) where T = string(dbus_type(T))
 dbus_spec(x) = dbus_spec(typeof(x))
 
