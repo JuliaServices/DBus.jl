@@ -134,6 +134,18 @@ function message_iter_write!(iter, arr::Vector{T}) where T
     end
     dbus_message_iter_close_container(iter, arr_iter)
 end
+function message_iter_write!(iter, dict::Dict{K,V}) where {K,V}
+    dict_iter = Ref{DBusMessageIter}()
+    dbus_message_iter_open_container(iter, DBUS_TYPE_ARRAY, dbus_spec(Dict{K,V}), dict_iter)
+    for arg in dict
+        dict_entry_iter = Ref{DBusMessageIter}()
+        dbus_message_iter_open_container(dict_iter, DBUS_TYPE_DICT_ENTRY, C_NULL, dict_entry_iter)
+        message_iter_write!(dict_entry_iter, arg[1])
+        message_iter_write!(dict_entry_iter, arg[2])
+        dbus_message_iter_close_container(dict_iter, dict_entry_iter)
+    end
+    dbus_message_iter_close_container(iter, dict_iter)
+end
 function message_iter_write!(iter, arg::String)
     GC.@preserve arg begin
         arg_ptr = Ref{Cstring}(pointer(arg))
