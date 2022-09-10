@@ -103,7 +103,7 @@ const TYPE_MAP = [
     Ref => DBUS_TYPE_VARIANT,
 ]
 for (jltype, dbustype) in TYPE_MAP
-    @eval dbus_type(::Type{$jltype}) = $dbustype
+    @eval dbus_type(::Type{T}) where {T<:$jltype} = $dbustype
 end
 function julia_type(x::Char)
     for (jltype, dbustype) in TYPE_MAP
